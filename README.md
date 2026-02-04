@@ -20,6 +20,7 @@ Este e-commerce é totalmente fictício e não realiza vendas reais.
 - Separação entre regras de negócio (`cartService`), cupons (`couponService`), tema (`themeService`) e interface (`uiService`).
 - Componentes reutilizáveis via `data-attributes` para manter o JavaScript enxuto.
 - Mock API via `apiService` para centralizar a lista de produtos.
+- Store global com eventos (`cart:updated`, `coupon:updated`, `theme:changed`) para UI reativa.
 
 ## Nota técnica
 O estado do carrinho fica armazenado no `localStorage` do navegador, sem uso de back-end.
@@ -30,6 +31,16 @@ O estado do carrinho fica armazenado no `localStorage` do navegador, sem uso de 
 
 ## Dark mode
 - Alternância global com persistência no `localStorage`.
+
+## Decisões técnicas
+- Store centralizado evita inconsistências entre páginas e simplifica o controle de estado.
+- Eventos customizados garantem atualização da UI sem dependências externas.
+- Mock API simula latência para aproximar o comportamento de uma aplicação real.
+
+## Testes manuais recomendados
+- Adicionar produtos diferentes e validar itens e quantidades no carrinho.
+- Aplicar cupons `URBAN10` e `FRETEGRATIS` e validar cálculo de desconto/frete.
+- Alternar o tema e recarregar a página para garantir persistência.
 
 ## GitHub Pages
 Acesse o projeto publicado em: https://seu-usuario.github.io/portfolio-ecommerce-vestuario

@@ -3,21 +3,87 @@ const couponKey = "urbanwear-coupon";
 const themeKey = "urbanwear-theme";
 const shippingCost = 20;
 
+const debounce = (callback, delay = 300) => {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => callback(...args), delay);
+  };
+};
+
+const store = (() => {
+  const listeners = new Map();
+  const state = {
+    cart: [],
+    coupon: "",
+    theme: "dark",
+  };
+
+  const emit = (event, detail) => {
+    const payload = { detail };
+    window.dispatchEvent(new CustomEvent(event, payload));
+    const callbacks = listeners.get(event) || [];
+    callbacks.forEach((cb) => cb(detail));
+  };
+
+  const sanitizeCart = (cart) => (Array.isArray(cart) ? cart : []);
+
+  const setState = (partial) => {
+    Object.assign(state, partial);
+  };
+
+  const init = () => {
+    try {
+      const storedCart = JSON.parse(localStorage.getItem(cartKey) || "[]");
+      state.cart = sanitizeCart(storedCart);
+    } catch (error) {
+      state.cart = [];
+      localStorage.removeItem(cartKey);
+    }
+
+    state.coupon = localStorage.getItem(couponKey) || "";
+    state.theme = localStorage.getItem(themeKey) || "dark";
+  };
+
+  init();
+
+  return {
+    getState() {
+      return { ...state };
+    },
+    subscribe(event, callback) {
+      const existing = listeners.get(event) || [];
+      listeners.set(event, [...existing, callback]);
+    },
+    updateCart(cart) {
+      const normalized = sanitizeCart(cart);
+      setState({ cart: normalized });
+      localStorage.setItem(cartKey, JSON.stringify(normalized));
+      emit("cart:updated", normalized);
+    },
+    updateCoupon(code) {
+      setState({ coupon: code });
+      if (code) {
+        localStorage.setItem(couponKey, code);
+      } else {
+        localStorage.removeItem(couponKey);
+      }
+      emit("coupon:updated", code);
+    },
+    updateTheme(theme) {
+      setState({ theme });
+      localStorage.setItem(themeKey, theme);
+      emit("theme:changed", theme);
+    },
+  };
+})();
+
 const cartService = {
   getCart() {
-    const stored = localStorage.getItem(cartKey);
-    if (!stored) return [];
-
-    try {
-      const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      localStorage.removeItem(cartKey);
-      return [];
-    }
+    return store.getState().cart;
   },
   saveCart(cart) {
-    localStorage.setItem(cartKey, JSON.stringify(cart));
+    store.updateCart(cart);
   },
   addItem(product) {
     const cart = this.getCart();
@@ -29,7 +95,7 @@ const cartService = {
       cart.push({ ...product, quantidade: 1 });
     }
 
-    this.saveCart(cart);
+    this.saveCart([...cart]);
   },
   removeItem(productId) {
     const cart = this.getCart().filter((item) => String(item.id) !== String(productId));
@@ -42,10 +108,10 @@ const cartService = {
     if (!item) return;
 
     item.quantidade = Math.max(1, quantity);
-    this.saveCart(cart);
+    this.saveCart([...cart]);
   },
   clearCart() {
-    localStorage.removeItem(cartKey);
+    this.saveCart([]);
   },
   getTotalItems() {
     return this.getCart().reduce((total, item) => total + item.quantidade, 0);
@@ -56,21 +122,17 @@ const cartService = {
       0
     );
   },
-  getTotalWithShipping() {
-    const subtotal = this.getSubtotal();
-    return subtotal > 0 ? subtotal + shippingCost : 0;
-  },
 };
 
 const couponService = {
   getCoupon() {
-    return localStorage.getItem(couponKey) || "";
+    return store.getState().coupon;
   },
   saveCoupon(code) {
-    localStorage.setItem(couponKey, code);
+    store.updateCoupon(code);
   },
   clearCoupon() {
-    localStorage.removeItem(couponKey);
+    store.updateCoupon("");
   },
   getDiscount(subtotal) {
     const code = this.getCoupon();
@@ -90,11 +152,11 @@ const couponService = {
 
 const themeService = {
   getTheme() {
-    return localStorage.getItem(themeKey) || "dark";
+    return store.getState().theme;
   },
   toggleTheme() {
     const next = this.getTheme() === "dark" ? "light" : "dark";
-    localStorage.setItem(themeKey, next);
+    store.updateTheme(next);
     return next;
   },
   applyTheme(theme) {
@@ -135,15 +197,15 @@ const uiService = {
       const decreaseDisabled = item.quantidade <= 1 ? "disabled" : "";
       li.innerHTML = `
         <div class="cart-item-image">
-          <img src="${item.imagem}" alt="${item.nome}" />
+          <img src="${item.imagem}" alt="${item.nome}" loading="lazy" />
         </div>
         <div class="cart-item-info">
           <h3>${item.nome}</h3>
           <p class="muted">${this.formatCurrency(item.preco)} cada</p>
-          <div class="cart-quantity">
-            <button class="qty-btn" data-action="decrease" data-id="${item.id}" ${decreaseDisabled}>-</button>
-            <span>${item.quantidade}</span>
-            <button class="qty-btn" data-action="increase" data-id="${item.id}">+</button>
+          <div class="cart-quantity" role="group" aria-label="Quantidade de ${item.nome}">
+            <button class="qty-btn" data-action="decrease" data-id="${item.id}" ${decreaseDisabled} aria-label="Diminuir quantidade">-</button>
+            <span aria-live="polite">${item.quantidade}</span>
+            <button class="qty-btn" data-action="increase" data-id="${item.id}" aria-label="Aumentar quantidade">+</button>
           </div>
         </div>
         <div class="cart-item-actions">
@@ -152,7 +214,7 @@ const uiService = {
           )}</p>
           <button class="btn outline" data-action="remove" data-id="${
             item.id
-          }">Remover item</button>
+          }" aria-label="Remover ${item.nome}">Remover item</button>
         </div>
       `;
       cartList.appendChild(li);
@@ -189,6 +251,8 @@ const uiService = {
     if (!toast) {
       toast = document.createElement("div");
       toast.className = "toast";
+      toast.setAttribute("role", "status");
+      toast.setAttribute("aria-live", "polite");
       document.body.appendChild(toast);
     }
     toast.textContent = message;
@@ -196,6 +260,19 @@ const uiService = {
       toast.classList.add("show");
     });
     setTimeout(() => toast.classList.remove("show"), 2200);
+  },
+  setLoading(container, isLoading) {
+    if (!container) return;
+    container.dataset.loading = isLoading ? "true" : "false";
+    container.setAttribute("aria-busy", isLoading ? "true" : "false");
+    if (isLoading) {
+      container.dataset.error = "";
+    }
+  },
+  setError(container, message) {
+    if (!container) return;
+    container.dataset.error = message || "";
+    container.setAttribute("aria-busy", "false");
   },
 };
 
@@ -213,7 +290,6 @@ const bindAddToCartButtons = () => {
       };
 
       cartService.addItem(product);
-      uiService.updateCartCounter();
       uiService.showToast("Produto adicionado ao carrinho!");
     });
   });
@@ -231,24 +307,28 @@ const bindCouponActions = () => {
     input.value = currentCoupon;
   }
 
+  const updateFeedback = debounce((message) => {
+    if (feedback) feedback.textContent = message;
+  }, 200);
+
   button.addEventListener("click", () => {
     const code = input.value.trim().toUpperCase();
 
     if (!code) {
       couponService.clearCoupon();
       uiService.renderTotals();
-      if (feedback) feedback.textContent = "Cupom removido.";
+      updateFeedback("Cupom removido.");
       return;
     }
 
     if (!couponService.isValid(code)) {
-      if (feedback) feedback.textContent = "Cupom inválido.";
+      updateFeedback("Cupom inválido.");
       return;
     }
 
     couponService.saveCoupon(code);
     uiService.renderTotals();
-    if (feedback) feedback.textContent = `Cupom aplicado: ${code}.`;
+    updateFeedback(`Cupom aplicado: ${code}.`);
   });
 };
 
@@ -281,24 +361,33 @@ const bindProductDetail = async () => {
 
   if (!imageEl || !nameEl || !descEl || !priceEl || !addButton) return;
 
-  const products = await apiService.getProducts();
-  const params = new URLSearchParams(window.location.search);
-  const productId = params.get("id") || products[0].id;
-  const product = products.find((item) => item.id === productId) || products[0];
+  uiService.setLoading(addButton, true);
 
-  imageEl.src = product.imagem;
-  imageEl.alt = product.nome;
-  nameEl.textContent = product.nome;
-  descEl.textContent = product.descricao;
-  priceEl.textContent = uiService.formatCurrency(product.preco);
-  if (collectionEl) {
-    collectionEl.textContent = product.colecao;
+  try {
+    const products = await apiService.getProducts();
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("id") || products[0].id;
+    const product = products.find((item) => item.id === productId) || products[0];
+
+    imageEl.src = product.imagem;
+    imageEl.alt = product.nome;
+    imageEl.loading = "lazy";
+    nameEl.textContent = product.nome;
+    descEl.textContent = product.descricao;
+    priceEl.textContent = uiService.formatCurrency(product.preco);
+    if (collectionEl) {
+      collectionEl.textContent = product.colecao;
+    }
+
+    addButton.dataset.id = product.id;
+    addButton.dataset.nome = product.nome;
+    addButton.dataset.preco = product.preco;
+    addButton.dataset.imagem = product.imagem;
+  } catch (error) {
+    descEl.textContent = "Não foi possível carregar o produto agora.";
+  } finally {
+    uiService.setLoading(addButton, false);
   }
-
-  addButton.dataset.id = product.id;
-  addButton.dataset.nome = product.nome;
-  addButton.dataset.preco = product.preco;
-  addButton.dataset.imagem = product.imagem;
 };
 
 const renderProductCards = (products, container, options = {}) => {
@@ -310,11 +399,11 @@ const renderProductCards = (products, container, options = {}) => {
     .map(
       (product) => `
       <article class="product-card">
-        <img src="${product.imagem}" alt="${product.nome}" />
+        <img src="${product.imagem}" alt="${product.nome}" loading="lazy" />
         <div class="product-info">
           <h3>${product.nome}</h3>
           <p class="price">${uiService.formatCurrency(product.preco)}</p>
-          <a class="btn outline" href="produto.html?id=${product.id}">Ver Produto</a>
+          <a class="btn outline" href="produto.html?id=${product.id}" aria-label="Ver detalhes de ${product.nome}">Ver Produto</a>
         </div>
       </article>
     `
@@ -327,12 +416,22 @@ const initProducts = async () => {
   const listContainer = document.querySelector("[data-product-list]");
   if (!featuredContainer && !listContainer) return;
 
-  const products = await apiService.getProducts();
-  if (featuredContainer) {
-    renderProductCards(products, featuredContainer, { limit: 3 });
-  }
-  if (listContainer) {
-    renderProductCards(products, listContainer);
+  const target = featuredContainer || listContainer;
+  uiService.setLoading(target, true);
+
+  try {
+    const products = await apiService.getProducts();
+    if (featuredContainer) {
+      renderProductCards(products, featuredContainer, { limit: 3 });
+    }
+    if (listContainer) {
+      renderProductCards(products, listContainer);
+    }
+  } catch (error) {
+    if (featuredContainer) uiService.setError(featuredContainer, "Erro ao carregar produtos.");
+    if (listContainer) uiService.setError(listContainer, "Erro ao carregar produtos.");
+  } finally {
+    uiService.setLoading(target, false);
   }
 };
 
@@ -355,15 +454,11 @@ const bindCartActions = () => {
 
     if (action === "increase" || action === "decrease") {
       const cart = cartService.getCart();
-      const item = cart.find((entry) => entry.id === id);
+      const item = cart.find((entry) => String(entry.id) === String(id));
       if (!item) return;
       const delta = action === "increase" ? 1 : -1;
       cartService.updateQuantity(id, item.quantidade + delta);
     }
-
-    uiService.renderCartItems();
-    uiService.renderTotals();
-    uiService.updateCartCounter();
   });
 
   if (checkoutButton) {
@@ -376,11 +471,25 @@ const bindCartActions = () => {
       uiService.showToast("Compra simulada realizada com sucesso!");
       cartService.clearCart();
       couponService.clearCoupon();
-      uiService.renderCartItems();
-      uiService.renderTotals();
-      uiService.updateCartCounter();
     });
   }
+};
+
+const bindStoreEvents = () => {
+  store.subscribe("cart:updated", () => {
+    uiService.renderCartItems();
+    uiService.renderTotals();
+    uiService.updateCartCounter();
+  });
+
+  store.subscribe("coupon:updated", () => {
+    uiService.renderTotals();
+  });
+
+  store.subscribe("theme:changed", (theme) => {
+    themeService.applyTheme(theme);
+    updateThemeToggleIcons(theme);
+  });
 };
 
 const initCart = async () => {
@@ -388,6 +497,7 @@ const initCart = async () => {
   themeService.applyTheme(currentTheme);
   updateThemeToggleIcons(currentTheme);
   bindThemeToggle();
+  bindStoreEvents();
   uiService.updateCartCounter();
   await initProducts();
   await bindProductDetail();

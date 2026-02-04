@@ -44,6 +44,13 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .container {
   width: min(1200px, 90%);
   margin: 0 auto;
@@ -231,6 +238,25 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 24px;
+  position: relative;
+  min-height: 120px;
+}
+
+.product-grid[data-loading="true"]::before,
+.product-grid[data-error]:not([data-error=""])::before {
+  content: attr(data-error);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border-radius: 16px;
+}
+
+.product-grid[data-loading="true"]::before {
+  content: "Carregando produtos...";
 }
 
 .product-card {
