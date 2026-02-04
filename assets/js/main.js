@@ -2,7 +2,15 @@ const cartKey = "urbanwear-cart";
 
 const getCart = () => {
   const stored = localStorage.getItem(cartKey);
-  return stored ? JSON.parse(stored) : [];
+  if (!stored) return [];
+
+  try {
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    localStorage.removeItem(cartKey);
+    return [];
+  }
 };
 
 const saveCart = (cart) => {
