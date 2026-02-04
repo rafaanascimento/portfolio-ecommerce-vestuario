@@ -53,5 +53,11 @@ Pedidos e pagamentos também são simulados e persistidos localmente.
 - Alternar o tema e recarregar a página para garantir persistência.
 - Finalizar compra e validar criação do pedido, status do pagamento e histórico.
 
+## Branding e refinamentos de UI
+- Rodapé institucional com autoria, badge e links sociais em SVG inline.
+- Microinterações no rodapé (fade + translate) e hover suave nos ícones.
+- Tooltips acessíveis para links sociais e foco visível em toda a navegação.
+- Compatibilidade total com dark mode e responsividade.
+
 ## GitHub Pages
 Acesse o projeto publicado em: https://seu-usuario.github.io/portfolio-ecommerce-vestuario

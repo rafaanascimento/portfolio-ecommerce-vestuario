@@ -330,14 +330,116 @@ input:focus-visible {
   border-top: 1px solid var(--line);
   padding: 32px 0 48px;
   background: color-mix(in srgb, var(--bg) 90%, #000 10%);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.site-footer.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-footer {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 .footer-content {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  text-align: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
   color: var(--muted);
+}
+
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.footer-links {
+  display: inline-flex;
+  gap: 16px;
+}
+
+.icon-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--text);
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.icon-link svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.icon-link:hover,
+.icon-link:focus-visible {
+  transform: scale(1.05);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.icon-link::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.icon-link:hover::after,
+.icon-link:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.footer-badge {
+  align-self: flex-start;
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.footer-badge:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .toast {
@@ -690,6 +792,15 @@ input:focus-visible {
 
   .coupon-row {
     flex-direction: column;
+  }
+
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-meta {
+    align-items: center;
   }
 
   .order-card {

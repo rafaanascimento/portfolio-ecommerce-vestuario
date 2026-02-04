@@ -818,6 +818,11 @@ const initCart = async () => {
   bindCouponActions();
   bindCartActions();
   bindOrderActions();
+
+  const footer = document.querySelector("[data-footer]");
+  if (footer) {
+    requestAnimationFrame(() => footer.classList.add("is-visible"));
+  }
 };
 
 document.addEventListener("DOMContentLoaded", initCart);
