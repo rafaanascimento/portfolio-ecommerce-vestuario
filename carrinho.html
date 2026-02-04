@@ -15,10 +15,15 @@
         <a href="produtos.html">Produtos</a>
         <a href="index.html#contato">Contato</a>
       </nav>
-      <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
-        <span class="cart-icon" aria-hidden="true">🛒</span>
-        <span class="cart-count" id="cart-count">0</span>
-      </a>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+          🌙
+        </button>
+        <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cart-count">0</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -42,6 +47,14 @@
 
         <aside class="cart-summary">
           <h2>Resumo do pedido</h2>
+          <div class="coupon-box">
+            <label for="coupon">Cupom de desconto</label>
+            <div class="coupon-row">
+              <input id="coupon" type="text" placeholder="Digite o cupom" data-coupon-input />
+              <button class="btn outline" type="button" data-apply-coupon>Aplicar</button>
+            </div>
+            <p class="muted" data-coupon-feedback></p>
+          </div>
           <div class="summary-row">
             <span>Subtotal</span>
             <strong data-cart-subtotal>R$ 0,00</strong>
@@ -49,6 +62,10 @@
           <div class="summary-row">
             <span>Frete</span>
             <strong data-cart-shipping>R$ 20,00</strong>
+          </div>
+          <div class="summary-row">
+            <span>Desconto</span>
+            <strong data-cart-discount>R$ 0,00</strong>
           </div>
           <div class="summary-row total">
             <span>Total</span>
@@ -71,6 +88,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>

@@ -15,10 +15,15 @@
         <a href="produtos.html">Produtos</a>
         <a href="#contato">Contato</a>
       </nav>
-      <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
-        <span class="cart-icon" aria-hidden="true">🛒</span>
-        <span class="cart-count" id="cart-count">0</span>
-      </a>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+          🌙
+        </button>
+        <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cart-count">0</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -46,32 +51,7 @@
           <h2>Produtos em destaque</h2>
           <p>Seleção especial com os itens mais desejados da semana.</p>
         </div>
-        <div class="product-grid">
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80" alt="Camisa masculina preta" />
-            <div class="product-info">
-              <h3>Camisa Essential</h3>
-              <p class="price">R$ 129,90</p>
-              <a class="btn outline" href="produto.html">Ver Produto</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80" alt="Calça jeans azul" />
-            <div class="product-info">
-              <h3>Calça Jeans Street</h3>
-              <p class="price">R$ 219,90</p>
-              <a class="btn outline" href="produto.html">Ver Produto</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80" alt="Tênis casual branco" />
-            <div class="product-info">
-              <h3>Tênis Urban Motion</h3>
-              <p class="price">R$ 349,90</p>
-              <a class="btn outline" href="produto.html">Ver Produto</a>
-            </div>
-          </article>
-        </div>
+        <div class="product-grid" data-featured-products></div>
       </div>
     </section>
   </main>
@@ -86,6 +66,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>

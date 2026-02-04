@@ -15,33 +15,29 @@
         <a href="produtos.html">Produtos</a>
         <a href="index.html#contato">Contato</a>
       </nav>
-      <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
-        <span class="cart-icon" aria-hidden="true">🛒</span>
-        <span class="cart-count" id="cart-count">0</span>
-      </a>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+          🌙
+        </button>
+        <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cart-count">0</span>
+        </a>
+      </div>
     </div>
   </header>
 
   <main class="page">
     <section class="product-detail container">
       <div class="product-image">
-        <img src="https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=1200&q=80" alt="Jaqueta urbana" />
+        <img data-product-image alt="" />
       </div>
       <div class="product-details">
-        <p class="eyebrow">Coleção Urbanwear</p>
-        <h1>Jaqueta Downtown</h1>
-        <p class="description">
-          Jaqueta urbana com modelagem confortável, tecido resistente e acabamento premium.
-          Ideal para compor looks noturnos e acompanhar sua rotina com estilo.
-        </p>
-        <p class="price">R$ 389,90</p>
-        <button
-          class="btn primary btn-add-cart"
-          data-id="3"
-          data-nome="Jaqueta Downtown"
-          data-preco="389.90"
-          data-imagem="https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=1200&q=80"
-        >
+        <p class="eyebrow" data-product-collection>Produto em destaque</p>
+        <h1 data-product-name></h1>
+        <p class="description" data-product-description></p>
+        <p class="price" data-product-price></p>
+        <button class="btn primary btn-add-cart" data-add-to-cart>
           Adicionar ao carrinho
         </button>
         <p class="note">Frete grátis nas compras acima de R$ 299.</p>
@@ -59,6 +55,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>

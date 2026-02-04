@@ -9,6 +9,17 @@
   --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
 }
 
+:root[data-theme="light"] {
+  --bg: #f7f7f9;
+  --surface: #ffffff;
+  --text: #141416;
+  --muted: #6b6f7a;
+  --accent: #b07a2d;
+  --accent-dark: #8f5f1f;
+  --line: #e1e3e8;
+  --shadow: 0 20px 40px rgba(20, 20, 22, 0.12);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -53,6 +64,12 @@ a {
   justify-content: space-between;
   padding: 16px 0;
   gap: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .logo {
@@ -102,6 +119,19 @@ a {
   border-radius: 999px;
   min-width: 22px;
   text-align: center;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero {
@@ -273,7 +303,7 @@ a {
 .site-footer {
   border-top: 1px solid var(--line);
   padding: 32px 0 48px;
-  background: #0c0c0d;
+  background: color-mix(in srgb, var(--bg) 90%, #000 10%);
 }
 
 .footer-content {
@@ -298,6 +328,26 @@ a {
   transform: translateY(10px);
   transition: opacity 0.3s ease, transform 0.3s ease;
   z-index: 20;
+}
+
+.coupon-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coupon-row {
+  display: flex;
+  gap: 8px;
+}
+
+.coupon-row input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
 }
 
 .toast.show {
@@ -435,6 +485,11 @@ a {
     flex-direction: column;
   }
 
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
   .nav {
     flex-wrap: wrap;
     justify-content: center;
@@ -468,5 +523,9 @@ a {
 
   .cart-summary {
     position: static;
+  }
+
+  .coupon-row {
+    flex-direction: column;
   }
 }

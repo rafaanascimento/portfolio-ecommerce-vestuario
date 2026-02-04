@@ -15,10 +15,15 @@
         <a href="produtos.html" class="active">Produtos</a>
         <a href="index.html#contato">Contato</a>
       </nav>
-      <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
-        <span class="cart-icon" aria-hidden="true">🛒</span>
-        <span class="cart-count" id="cart-count">0</span>
-      </a>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar tema">
+          🌙
+        </button>
+        <a class="cart" href="carrinho.html" aria-label="Ver carrinho">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cart-count">0</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -29,56 +34,7 @@
           <h1>Nossos produtos</h1>
           <p>Escolha peças versáteis com acabamento premium e estilo urbano.</p>
         </div>
-        <div class="product-grid">
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=800&q=80" alt="Camisa masculina preta" />
-            <div class="product-info">
-              <h3>Camisa Essential</h3>
-              <p class="price">R$ 129,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=800&q=80" alt="Calça jeans azul" />
-            <div class="product-info">
-              <h3>Calça Jeans Street</h3>
-              <p class="price">R$ 219,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb?auto=format&fit=crop&w=800&q=80" alt="Jaqueta urbana" />
-            <div class="product-info">
-              <h3>Jaqueta Downtown</h3>
-              <p class="price">R$ 389,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80" alt="Tênis casual branco" />
-            <div class="product-info">
-              <h3>Tênis Urban Motion</h3>
-              <p class="price">R$ 349,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=800&q=80" alt="Moletom cinza" />
-            <div class="product-info">
-              <h3>Moletom Skyline</h3>
-              <p class="price">R$ 239,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-          <article class="product-card">
-            <img src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80" alt="Camisa básica" />
-            <div class="product-info">
-              <h3>Camisa Urban Fit</h3>
-              <p class="price">R$ 149,90</p>
-              <a class="btn outline" href="produto.html">Detalhes</a>
-            </div>
-          </article>
-        </div>
+        <div class="product-grid" data-product-list></div>
       </div>
     </section>
   </main>
@@ -93,6 +49,7 @@
     </div>
   </footer>
 
+  <script src="assets/js/api.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>
