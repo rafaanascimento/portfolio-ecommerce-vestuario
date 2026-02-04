@@ -1,16 +1,22 @@
-const cartKey = "urbanwear-cart-count";
+const cartKey = "urbanwear-cart";
 
-const getCartCount = () => {
+const getCart = () => {
   const stored = localStorage.getItem(cartKey);
-  return stored ? Number(stored) : 0;
+  return stored ? JSON.parse(stored) : [];
 };
 
-const setCartCount = (count) => {
-  localStorage.setItem(cartKey, String(count));
+const saveCart = (cart) => {
+  localStorage.setItem(cartKey, JSON.stringify(cart));
+};
+
+const calculateCartCount = (cart) =>
+  cart.reduce((total, item) => total + item.quantidade, 0);
+
+const updateCartCounter = () => {
   const counter = document.querySelector("#cart-count");
-  if (counter) {
-    counter.textContent = count;
-  }
+  if (!counter) return;
+  const cart = getCart();
+  counter.textContent = calculateCartCount(cart);
 };
 
 const showToast = (message) => {
@@ -27,20 +33,41 @@ const showToast = (message) => {
   setTimeout(() => toast.classList.remove("show"), 2200);
 };
 
-const bindAddToCart = () => {
-  const addButton = document.querySelector("[data-add-to-cart]");
-  if (!addButton) return;
+const addToCart = (product) => {
+  const cart = getCart();
+  const existingItem = cart.find((item) => item.id === product.id);
 
-  addButton.addEventListener("click", () => {
-    const newCount = getCartCount() + 1;
-    setCartCount(newCount);
-    showToast("Produto adicionado ao carrinho!");
+  if (existingItem) {
+    existingItem.quantidade += 1;
+  } else {
+    cart.push({ ...product, quantidade: 1 });
+  }
+
+  saveCart(cart);
+  updateCartCounter();
+};
+
+const bindAddToCartButtons = () => {
+  const buttons = document.querySelectorAll(".btn-add-cart");
+  if (!buttons.length) return;
+
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const product = {
+        id: button.dataset.id,
+        nome: button.dataset.nome,
+        preco: Number(button.dataset.preco),
+      };
+
+      addToCart(product);
+      showToast("Produto adicionado ao carrinho!");
+    });
   });
 };
 
 const initCart = () => {
-  setCartCount(getCartCount());
-  bindAddToCart();
+  updateCartCounter();
+  bindAddToCartButtons();
 };
 
 document.addEventListener("DOMContentLoaded", initCart);
