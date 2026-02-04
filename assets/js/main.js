@@ -1,6 +1,7 @@
 const cartKey = "urbanwear-cart";
 const couponKey = "urbanwear-coupon";
 const themeKey = "urbanwear-theme";
+const ordersKey = "orders";
 const shippingCost = 20;
 
 const debounce = (callback, delay = 300) => {
@@ -11,6 +12,10 @@ const debounce = (callback, delay = 300) => {
   };
 };
 
+const emitEvent = (event, detail) => {
+  window.dispatchEvent(new CustomEvent(event, { detail }));
+};
+
 const store = (() => {
   const listeners = new Map();
   const state = {
@@ -19,17 +24,16 @@ const store = (() => {
     theme: "dark",
   };
 
-  const emit = (event, detail) => {
-    const payload = { detail };
-    window.dispatchEvent(new CustomEvent(event, payload));
-    const callbacks = listeners.get(event) || [];
-    callbacks.forEach((cb) => cb(detail));
-  };
-
   const sanitizeCart = (cart) => (Array.isArray(cart) ? cart : []);
 
   const setState = (partial) => {
     Object.assign(state, partial);
+  };
+
+  const emit = (event, detail) => {
+    emitEvent(event, detail);
+    const callbacks = listeners.get(event) || [];
+    callbacks.forEach((cb) => cb(detail));
   };
 
   const init = () => {
@@ -164,12 +168,156 @@ const themeService = {
   },
 };
 
+const orderService = {
+  getOrders() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(ordersKey) || "[]");
+      return Array.isArray(stored) ? stored : [];
+    } catch (error) {
+      localStorage.removeItem(ordersKey);
+      return [];
+    }
+  },
+  saveOrders(orders) {
+    localStorage.setItem(ordersKey, JSON.stringify(orders));
+  },
+  createOrder(cart, totals, paymentMethod) {
+    const order = {
+      id: `ORDER${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: "created",
+      items: cart.map((item) => ({
+        id: item.id,
+        nome: item.nome,
+        preco: item.preco,
+        quantidade: item.quantidade,
+        imagem: item.imagem,
+      })),
+      subtotal: totals.subtotal,
+      desconto: totals.desconto,
+      frete: totals.frete,
+      total: totals.total,
+      payment: {
+        method: paymentMethod,
+        status: "pending",
+        transactionId: "",
+      },
+    };
+
+    const orders = this.getOrders();
+    this.saveOrders([order, ...orders]);
+    emitEvent("order:created", order);
+    return order;
+  },
+  getOrderById(orderId) {
+    return this.getOrders().find((order) => order.id === orderId);
+  },
+  updateOrder(orderId, updater) {
+    const orders = this.getOrders();
+    const index = orders.findIndex((order) => order.id === orderId);
+    if (index === -1) return null;
+    const updated = updater({ ...orders[index] });
+    orders[index] = updated;
+    this.saveOrders(orders);
+    emitEvent("order:updated", updated);
+    return updated;
+  },
+  updateOrderStatus(orderId, status) {
+    return this.updateOrder(orderId, (order) => ({ ...order, status }));
+  },
+  updatePayment(orderId, payment) {
+    return this.updateOrder(orderId, (order) => ({
+      ...order,
+      payment: { ...order.payment, ...payment },
+    }));
+  },
+};
+
+const checkoutService = {
+  getTotals() {
+    const subtotal = cartService.getSubtotal();
+    const desconto = couponService.getDiscount(subtotal);
+    const frete = couponService.getShippingCost();
+    const total = subtotal > 0 ? subtotal - desconto + frete : 0;
+    return { subtotal, desconto, frete, total };
+  },
+  async processCheckout(paymentMethod) {
+    const cart = cartService.getCart();
+    if (!cart.length) return null;
+
+    const totals = this.getTotals();
+    const order = orderService.createOrder(cart, totals, paymentMethod);
+
+    const payment = await paymentApi.processPayment({
+      method: paymentMethod,
+      amount: totals.total,
+    });
+
+    emitEvent("payment:processed", payment);
+
+    let nextStatus = "created";
+    if (payment.status === "approved") {
+      nextStatus = "paid";
+      cartService.clearCart();
+      couponService.clearCoupon();
+    } else if (payment.status === "pending") {
+      nextStatus = "pending";
+    }
+
+    orderService.updateOrder(order.id, (current) => ({
+      ...current,
+      status: nextStatus,
+      payment: {
+        method: payment.method,
+        status: payment.status,
+        transactionId: payment.transactionId,
+      },
+    }));
+
+    return order;
+  },
+  confirmPixPayment(orderId) {
+    orderService.updateOrder(orderId, (order) => ({
+      ...order,
+      status: "paid",
+      payment: {
+        ...order.payment,
+        status: "approved",
+        transactionId: order.payment.transactionId || `TXN${Date.now()}`,
+      },
+    }));
+  },
+};
+
 const uiService = {
   formatCurrency(value) {
     return value.toLocaleString("pt-BR", {
       style: "currency",
       currency: "BRL",
     });
+  },
+  formatDate(value) {
+    return new Date(value).toLocaleString("pt-BR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  },
+  statusLabel(status) {
+    const labels = {
+      created: "Criado",
+      paid: "Pago",
+      pending: "Pendente",
+      cancelled: "Cancelado",
+    };
+    return labels[status] || status;
+  },
+  paymentLabel(status) {
+    const labels = {
+      approved: "Aprovado",
+      pending: "Pendente",
+      rejected: "Recusado",
+    };
+    return labels[status] || status;
   },
   updateCartCounter() {
     const counter = document.querySelector("#cart-count");
@@ -229,22 +377,144 @@ const uiService = {
 
     if (!subtotalEl || !shippingEl || !totalEl) return;
 
-    const hasItems = cartService.getTotalItems() > 0;
-    const subtotal = cartService.getSubtotal();
-    const discount = couponService.getDiscount(subtotal);
-    const shipping = couponService.getShippingCost();
-    const total = hasItems ? subtotal - discount + shipping : 0;
+    const totals = checkoutService.getTotals();
+    const hasItems = totals.total > 0;
 
-    subtotalEl.textContent = this.formatCurrency(subtotal);
-    shippingEl.textContent = this.formatCurrency(shipping);
+    subtotalEl.textContent = this.formatCurrency(totals.subtotal);
+    shippingEl.textContent = this.formatCurrency(totals.frete);
     if (discountEl) {
-      discountEl.textContent = this.formatCurrency(discount);
+      discountEl.textContent = this.formatCurrency(totals.desconto);
     }
-    totalEl.textContent = this.formatCurrency(total);
+    totalEl.textContent = this.formatCurrency(totals.total);
 
     if (checkoutButton) {
       checkoutButton.disabled = !hasItems;
     }
+  },
+  renderOrdersList() {
+    const list = document.querySelector("[data-orders-list]");
+    const emptyState = document.querySelector("[data-orders-empty]");
+
+    if (!list || !emptyState) return;
+
+    const orders = orderService.getOrders();
+    list.innerHTML = "";
+
+    if (!orders.length) {
+      emptyState.classList.remove("hidden");
+      return;
+    }
+
+    emptyState.classList.add("hidden");
+    orders.forEach((order) => {
+      const li = document.createElement("li");
+      li.className = "order-card";
+      li.innerHTML = `
+        <div>
+          <h3>${order.id}</h3>
+          <p class="muted">${this.formatDate(order.createdAt)}</p>
+        </div>
+        <span class="status-badge status-${order.status}">${this.statusLabel(order.status)}</span>
+        <strong>${this.formatCurrency(order.total)}</strong>
+        <a class="btn outline" href="pedido-detalhe.html?orderId=${order.id}">Detalhes</a>
+      `;
+      list.appendChild(li);
+    });
+  },
+  renderOrderConfirmation() {
+    const container = document.querySelector("[data-order-summary]");
+    if (!container) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId");
+    const order = orderId ? orderService.getOrderById(orderId) : null;
+
+    if (!order) {
+      container.innerHTML = `<p class="muted">Pedido não encontrado.</p>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="confirmation-row">
+        <span>Número do pedido</span>
+        <strong>${order.id}</strong>
+      </div>
+      <div class="confirmation-row">
+        <span>Status do pedido</span>
+        <strong class="status-badge status-${order.status}">${this.statusLabel(order.status)}</strong>
+      </div>
+      <div class="confirmation-row">
+        <span>Pagamento</span>
+        <strong>${this.paymentLabel(order.payment.status)}</strong>
+      </div>
+      <div class="confirmation-row">
+        <span>Método</span>
+        <strong>${order.payment.method}</strong>
+      </div>
+      <div class="confirmation-row">
+        <span>Total</span>
+        <strong>${this.formatCurrency(order.total)}</strong>
+      </div>
+    `;
+  },
+  renderOrderDetail() {
+    const container = document.querySelector("[data-order-detail-card]");
+    if (!container) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("orderId");
+    const order = orderId ? orderService.getOrderById(orderId) : null;
+
+    if (!order) {
+      container.innerHTML = `<p class="muted">Pedido não encontrado.</p>`;
+      return;
+    }
+
+    const items = order.items
+      .map(
+        (item) => `
+        <li>
+          <span>${item.nome} (${item.quantidade}x)</span>
+          <strong>${this.formatCurrency(item.preco * item.quantidade)}</strong>
+        </li>
+      `
+      )
+      .join("");
+
+    const pixAction =
+      order.payment.method === "pix" && order.payment.status === "pending"
+        ? `<button class="btn primary" data-confirm-pix>Confirmar pagamento Pix</button>`
+        : "";
+
+    container.innerHTML = `
+      <div class="order-meta">
+        <div>
+          <h2>${order.id}</h2>
+          <p class="muted">${this.formatDate(order.createdAt)}</p>
+        </div>
+        <span class="status-badge status-${order.status}">${this.statusLabel(order.status)}</span>
+      </div>
+      <div class="order-sections">
+        <div>
+          <h3>Itens</h3>
+          <ul class="order-items">${items}</ul>
+        </div>
+        <div class="order-summary">
+          <h3>Resumo</h3>
+          <p>Subtotal: <strong>${this.formatCurrency(order.subtotal)}</strong></p>
+          <p>Desconto: <strong>${this.formatCurrency(order.desconto)}</strong></p>
+          <p>Frete: <strong>${this.formatCurrency(order.frete)}</strong></p>
+          <p>Total: <strong>${this.formatCurrency(order.total)}</strong></p>
+        </div>
+      </div>
+      <div class="order-payment">
+        <h3>Pagamento</h3>
+        <p>Método: <strong>${order.payment.method}</strong></p>
+        <p>Status: <strong>${this.paymentLabel(order.payment.status)}</strong></p>
+        <p>Transação: <strong>${order.payment.transactionId || "-"}</strong></p>
+        ${pixAction}
+      </div>
+    `;
   },
   showToast(message) {
     let toast = document.querySelector(".toast");
@@ -316,7 +586,6 @@ const bindCouponActions = () => {
 
     if (!code) {
       couponService.clearCoupon();
-      uiService.renderTotals();
       updateFeedback("Cupom removido.");
       return;
     }
@@ -327,7 +596,6 @@ const bindCouponActions = () => {
     }
 
     couponService.saveCoupon(code);
-    uiService.renderTotals();
     updateFeedback(`Cupom aplicado: ${code}.`);
   });
 };
@@ -462,17 +730,47 @@ const bindCartActions = () => {
   });
 
   if (checkoutButton) {
-    checkoutButton.addEventListener("click", () => {
+    checkoutButton.addEventListener("click", async () => {
       if (cartService.getTotalItems() === 0) {
         uiService.showToast("Seu carrinho está vazio.");
         return;
       }
 
-      uiService.showToast("Compra simulada realizada com sucesso!");
-      cartService.clearCart();
-      couponService.clearCoupon();
+      const selected = document.querySelector("input[name=\"payment-method\"]:checked");
+      if (!selected) {
+        uiService.showToast("Selecione um método de pagamento.");
+        return;
+      }
+
+      checkoutButton.disabled = true;
+      uiService.showToast("Processando pagamento...");
+      const order = await checkoutService.processCheckout(selected.value);
+      checkoutButton.disabled = false;
+
+      if (order) {
+        window.location.href = `pedido-confirmado.html?orderId=${order.id}`;
+      }
     });
   }
+};
+
+const bindOrderActions = () => {
+  const container = document.querySelector("[data-order-detail-card]");
+  if (!container) return;
+
+  container.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    if (target.matches("[data-confirm-pix]")) {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get("orderId");
+      if (orderId) {
+        checkoutService.confirmPixPayment(orderId);
+        uiService.showToast("Pagamento Pix confirmado.");
+      }
+    }
+  });
 };
 
 const bindStoreEvents = () => {
@@ -490,6 +788,16 @@ const bindStoreEvents = () => {
     themeService.applyTheme(theme);
     updateThemeToggleIcons(theme);
   });
+
+  window.addEventListener("order:created", () => {
+    uiService.renderOrdersList();
+  });
+
+  window.addEventListener("order:updated", () => {
+    uiService.renderOrdersList();
+    uiService.renderOrderDetail();
+    uiService.renderOrderConfirmation();
+  });
 };
 
 const initCart = async () => {
@@ -504,8 +812,12 @@ const initCart = async () => {
   bindAddToCartButtons();
   uiService.renderCartItems();
   uiService.renderTotals();
+  uiService.renderOrdersList();
+  uiService.renderOrderDetail();
+  uiService.renderOrderConfirmation();
   bindCouponActions();
   bindCartActions();
+  bindOrderActions();
 };
 
 document.addEventListener("DOMContentLoaded", initCart);

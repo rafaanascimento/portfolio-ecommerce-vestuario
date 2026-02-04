@@ -13,6 +13,7 @@
       <nav class="nav">
         <a href="index.html">Home</a>
         <a href="produtos.html">Produtos</a>
+        <a href="pedidos.html">Pedidos</a>
         <a href="index.html#contato">Contato</a>
       </nav>
       <div class="header-actions">
@@ -71,6 +72,21 @@
             <span>Total</span>
             <strong data-cart-total>R$ 0,00</strong>
           </div>
+          <div class="payment-methods" role="group" aria-label="Método de pagamento">
+            <p>Método de pagamento</p>
+            <label>
+              <input type="radio" name="payment-method" value="pix" checked />
+              Pix
+            </label>
+            <label>
+              <input type="radio" name="payment-method" value="credit_card" />
+              Cartão de crédito
+            </label>
+            <label>
+              <input type="radio" name="payment-method" value="debit_card" />
+              Cartão de débito
+            </label>
+          </div>
           <button class="btn primary" data-checkout>Finalizar compra</button>
           <p class="note">Pagamento simulado para fins de portfólio.</p>
         </aside>
@@ -89,6 +105,7 @@
   </footer>
 
   <script src="assets/js/api.js"></script>
+  <script src="assets/js/paymentApi.js"></script>
   <script src="assets/js/main.js"></script>
 </body>
 </html>

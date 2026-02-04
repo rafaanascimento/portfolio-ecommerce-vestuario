@@ -376,6 +376,143 @@ input:focus-visible {
   color: var(--text);
 }
 
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.payment-methods label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.orders-page,
+.confirmation-page,
+.order-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.orders-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.order-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 16px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 18px;
+}
+
+.orders-empty,
+.confirmation-card,
+.order-detail-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.confirmation-card,
+.order-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.confirmation-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-created {
+  background: rgba(179, 179, 179, 0.2);
+  color: var(--text);
+}
+
+.status-paid {
+  background: rgba(42, 181, 126, 0.2);
+  color: #2ab57e;
+}
+
+.status-pending {
+  background: rgba(255, 196, 0, 0.2);
+  color: #c89b00;
+}
+
+.status-cancelled {
+  background: rgba(228, 67, 67, 0.2);
+  color: #e44343;
+}
+
+.order-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.order-sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 24px;
+}
+
+.order-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.order-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.order-summary p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.order-payment {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .toast.show {
   opacity: 1;
   transform: translateY(0);
@@ -553,5 +690,14 @@ input:focus-visible {
 
   .coupon-row {
     flex-direction: column;
+  }
+
+  .order-card {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .order-sections {
+    grid-template-columns: 1fr;
   }
 }
